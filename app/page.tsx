@@ -26,6 +26,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [source, setSource] = useState("amazon");
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
@@ -52,10 +53,11 @@ export default function Home() {
     return "text-red-400";
   };
 
-  const searchAmazon = async (query: string) => {
+  const searchProducts = async (query: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/produits?query=${encodeURIComponent(query)}`);
+      const endpoint = source === "amazon" ? `/api/produits?query=${encodeURIComponent(query)}` : `/api/cj?query=${encodeURIComponent(query)}`;
+      const res = await fetch(endpoint);
       const data = await res.json();
       if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
     } catch (e) { console.error(e); }
@@ -147,8 +149,24 @@ export default function Home() {
       <section id="features" className="px-8 py-24 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Tout ce dont tu as besoin</h2>
-            <p className="text-gray-400 text-lg">pour trouver ton prochain produit gagnant</p>
+            <h2 className="text-4xl font-bold mb-4">Explorer les produits</h2>
+<p className="text-gray-400 text-lg mb-6">Sélectionne une source et recherche un produit</p>
+
+{/* ONGLETS */}
+<div className="flex justify-center gap-4 mb-8">
+  <button
+    onClick={() => setSource("amazon")}
+    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "amazon" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
+  >
+    🛒 Amazon
+  </button>
+  <button
+    onClick={() => setSource("cj")}
+    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "cj" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
+  >
+    📦 CJDropshipping
+  </button>
+</div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
@@ -181,7 +199,7 @@ export default function Home() {
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setSelectedCategory(null);
-                  if (e.target.value.length > 2) searchAmazon(e.target.value);
+                  if (e.target.value.length > 2) searchProducts(e.target.value);
                 }}
                 placeholder="Rechercher n'importe quel produit..."
                 className="w-full bg-gray-900 border border-gray-700 focus:border-orange-500 rounded-2xl pl-12 pr-6 py-4 text-white placeholder-gray-500 focus:outline-none text-lg"
