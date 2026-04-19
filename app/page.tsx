@@ -206,7 +206,7 @@ export default function Home() {
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setSelectedCategory(null);
-                  if (e.target.value.length > 2) searchProducts(e.target.value);
+                  if (e.target.value.length > 2) searchProducts(e.target.value, source);
                 }}
                 placeholder="Rechercher n'importe quel produit..."
                 className="w-full bg-gray-900 border border-gray-700 focus:border-orange-500 rounded-2xl pl-12 pr-6 py-4 text-white placeholder-gray-500 focus:outline-none text-lg"
