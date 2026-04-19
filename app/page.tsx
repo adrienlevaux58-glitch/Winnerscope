@@ -15,6 +15,10 @@ type Product = {
   fournisseur: string;
   score: number;
   categorie: string;
+  url?: string;
+  image?: string;
+  rating?: string;
+  avis?: number;
 };
 
 export default function Home() {
