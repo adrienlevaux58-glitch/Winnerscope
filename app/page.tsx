@@ -25,46 +25,25 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   const categories = ["Mode", "Electronique", "Beaute", "Maison", "Sport"];
-
   const categoryEmojis: Record<string, string> = {
     Mode: "👗", Electronique: "⚡", Beaute: "💄", Maison: "🏠", Sport: "🏋️",
   };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-  setLoading(false);
-};
-    fetchProducts();
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
   }, []);
 
-  const searchAmazon = async (query: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/produits?query=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      if (data.produits && data.produits.length > 0) {
-        setAllProducts(data.produits);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };const searchByCategory = async (cat: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/produits?query=${encodeURIComponent(cat)}&categorie=${encodeURIComponent(cat)}`);
-      const data = await res.json();
-      if (data.produits && data.produits.length > 0) {
-        setAllProducts(data.produits);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
   };
 
   const getScoreColor = (score: number) => {
@@ -73,19 +52,36 @@ export default function Home() {
     return "text-red-400";
   };
 
+  const searchAmazon = async (query: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/produits?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const searchByCategory = async (cat: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/produits?query=${encodeURIComponent(cat)}&categorie=${encodeURIComponent(cat)}`);
+      const data = await res.json();
+      if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
   const filteredProducts = selectedCategory
-    ? allProducts.filter((p) =>
-        p.categorie === selectedCategory &&
-        p.nom.toLowerCase().includes(search.toLowerCase()))
+    ? allProducts.filter((p) => p.categorie === selectedCategory && p.nom.toLowerCase().includes(search.toLowerCase()))
     : search.length > 1
-    ? allProducts.filter((p) =>
-        p.nom.toLowerCase().includes(search.toLowerCase()))
-    : [];
+    ? allProducts.filter((p) => p.nom.toLowerCase().includes(search.toLowerCase()))
+    : allProducts;
+
+  const produitsAffiches = user ? filteredProducts : filteredProducts.slice(0, 3);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
-
-      {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-gray-950/80 backdrop-blur-xl px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🏆</span>
@@ -97,12 +93,20 @@ export default function Home() {
           <a href="#tarifs" className="hover:text-white transition-colors">Tarifs</a>
         </div>
         <div className="flex items-center gap-3">
-          <button className="text-sm text-gray-400 hover:text-white transition-colors">Connexion</button>
-          <button className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold">Essai gratuit</button>
+          {user ? (
+            <>
+              <span className="text-sm text-gray-400 hidden md:block">{user.email}</span>
+              <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-white transition-colors">Déconnexion</button>
+              <button className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold">Passer Pro</button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => router.push("/auth")} className="text-sm text-gray-400 hover:text-white transition-colors">Connexion</button>
+              <button onClick={() => router.push("/auth")} className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold">S'inscrire</button>
+            </>
+          )}
         </div>
       </nav>
-
-      {/* HERO */}
       <section className="relative pt-32 pb-24 px-8 text-center">
         <div className="absolute top-32 left-1/2 -translate-x-1/2 w-96 h-64 bg-orange-500/10 rounded-full blur-3xl" />
         <div className="relative max-w-5xl mx-auto">
@@ -121,13 +125,13 @@ export default function Home() {
             <button onClick={() => document.getElementById("produits")?.scrollIntoView({ behavior: "smooth" })} className="bg-orange-500 hover:bg-orange-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-xl shadow-orange-500/20 w-full sm:w-auto">
               Explorer les produits →
             </button>
-            <button className="border border-gray-700 hover:border-gray-500 px-8 py-4 rounded-xl text-lg text-gray-300 w-full sm:w-auto">
-              Voir une démo
+            <button onClick={() => router.push("/auth")} className="border border-gray-700 hover:border-gray-500 px-8 py-4 rounded-xl text-lg text-gray-300 w-full sm:w-auto">
+              Créer un compte gratuit
             </button>
           </div>
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
             {[
-              { value: `${allProducts.length}+`, label: "Produits analysés" },
+              { value: "30+", label: "Produits analysés" },
               { value: "5", label: "Catégories" },
               { value: "83%", label: "Marge moyenne" },
             ].map((s) => (
@@ -138,7 +142,8 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>{/* FEATURES */}
+      </section>
+
       <section id="features" className="px-8 py-24 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -163,8 +168,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* PRODUITS */}
       <section id="produits" className="px-8 py-24 border-t border-white/5">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -175,26 +178,23 @@ export default function Home() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => { 
-  setSearch(e.target.value); 
-  setSelectedCategory(null);
-  if (e.target.value.length > 2) {
-    searchAmazon(e.target.value);
-  }
-}}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setSelectedCategory(null);
+                  if (e.target.value.length > 2) searchAmazon(e.target.value);
+                }}
                 placeholder="Rechercher n'importe quel produit..."
                 className="w-full bg-gray-900 border border-gray-700 focus:border-orange-500 rounded-2xl pl-12 pr-6 py-4 text-white placeholder-gray-500 focus:outline-none text-lg"
               />
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               {categories.map((cat) => (
-              <button key={cat} onClick={() => {
-  const newCat = cat === selectedCategory ? null : cat;
-  setSelectedCategory(newCat);
-  setSearch("");
-  if (newCat) searchByCategory(newCat);
-}}
-                  className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium transition-all border ${selectedCategory === cat ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
+                <button key={cat} onClick={() => {
+                  const newCat = cat === selectedCategory ? null : cat;
+                  setSelectedCategory(newCat);
+                  setSearch("");
+                  if (newCat) searchByCategory(newCat);
+                }} className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium transition-all border ${selectedCategory === cat ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
                   <span>{categoryEmojis[cat]}</span><span>{cat}</span>
                 </button>
               ))}
@@ -208,17 +208,13 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && filteredProducts.length > 0 && (
+          {!loading && produitsAffiches.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredProducts.map((p) => (
+              {produitsAffiches.map((p) => (
                 <div key={p.id} onClick={() => {
-  if (p.url) {
-    window.open(p.url, '_blank');
-  } else {
-    router.push(`/produit/${p.id}`);
-  }
-}}
-                  className="bg-gray-900 border border-gray-800 hover:border-orange-500/50 rounded-2xl p-6 cursor-pointer transition-all hover:-translate-y-1">
+                  if (p.url) window.open(p.url, '_blank');
+                  else router.push(`/produit/${p.id}`);
+                }} className="bg-gray-900 border border-gray-800 hover:border-orange-500/50 rounded-2xl p-6 cursor-pointer transition-all hover:-translate-y-1">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="text-lg font-semibold leading-tight">{p.nom}</h4>
                     <span className={`text-xl font-bold ml-2 shrink-0 ${getScoreColor(p.score)}`}>{p.score}</span>
@@ -239,6 +235,16 @@ export default function Home() {
             </div>
           )}
 
+          {!user && filteredProducts.length > 3 && (
+            <div className="text-center py-12 border-t border-gray-800 mt-8">
+              <p className="text-xl font-bold mb-2">🔒 {filteredProducts.length - 3} produits masqués</p>
+              <p className="text-gray-400 mb-6">Crée un compte gratuit pour voir tous les produits</p>
+              <button onClick={() => router.push("/auth")} className="bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-xl font-semibold">
+                S'inscrire gratuitement →
+              </button>
+            </div>
+          )}
+
           {!loading && search.length > 1 && filteredProducts.length === 0 && (
             <div className="text-center text-gray-500 py-20">
               <p className="text-4xl mb-4">🔍</p>
@@ -246,7 +252,7 @@ export default function Home() {
             </div>
           )}
         </div>
-      </section>{/* TARIFS */}
+      </section>
       <section id="tarifs" className="px-8 py-24 border-t border-white/5">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-4">Tarifs simples</h2>
@@ -256,13 +262,15 @@ export default function Home() {
               <h3 className="text-xl font-bold mb-2">Gratuit</h3>
               <p className="text-4xl font-bold mb-6">0€<span className="text-gray-400 text-lg font-normal">/mois</span></p>
               <ul className="space-y-3 text-gray-400 text-sm mb-8">
-                <li>✅ 3 produits par catégorie</li>
-                <li>✅ Winning Score basique</li>
+                <li>✅ 3 produits par recherche</li>
                 <li>✅ Recherche par mot-clé</li>
-                <li>❌ Données avancées</li>
-                <li>❌ Accès fournisseurs</li>
+                <li>✅ Catégories disponibles</li>
+                <li>❌ Produits illimités</li>
+                <li>❌ Accès fournisseurs complet</li>
               </ul>
-              <button className="w-full border border-gray-700 hover:border-orange-500 py-3 rounded-xl transition-colors">Commencer</button>
+              <button onClick={() => router.push("/auth")} className="w-full border border-gray-700 hover:border-orange-500 py-3 rounded-xl transition-colors">
+                Commencer gratuitement
+              </button>
             </div>
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-8 text-left relative">
               <div className="absolute top-4 right-4 bg-orange-500 text-xs font-bold px-3 py-1 rounded-full">POPULAIRE</div>
@@ -275,17 +283,12 @@ export default function Home() {
                 <li>✅ Accès fournisseurs directs</li>
                 <li>✅ Alertes nouveaux produits</li>
               </ul>
-              <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 rounded-xl transition-colors font-semibold">Commencer l'essai gratuit</button>
+              <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 rounded-xl transition-colors font-semibold">
+                Commencer l'essai gratuit
+              </button>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/5 px-8 py-8 text-center text-gray-500 text-sm">
-        <p>© 2025 WinnerScope — Trouve les produits gagnants pour ton business dropshipping</p>
-      </footer>
-
-    </main>
+      </section></main>
   );
 }
