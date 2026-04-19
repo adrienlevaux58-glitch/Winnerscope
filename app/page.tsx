@@ -39,6 +39,20 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  const searchAmazon = async (query: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/produits?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.produits && data.produits.length > 0) {
+        setAllProducts(data.produits);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 70) return "text-green-400";
     if (score >= 40) return "text-orange-400";
@@ -147,7 +161,13 @@ export default function Home() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setSelectedCategory(null); }}
+                onChange={(e) => { 
+  setSearch(e.target.value); 
+  setSelectedCategory(null);
+  if (e.target.value.length > 2) {
+    searchAmazon(e.target.value);
+  }
+}}
                 placeholder="Rechercher n'importe quel produit..."
                 className="w-full bg-gray-900 border border-gray-700 focus:border-orange-500 rounded-2xl pl-12 pr-6 py-4 text-white placeholder-gray-500 focus:outline-none text-lg"
               />
