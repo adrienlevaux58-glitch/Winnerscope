@@ -61,11 +61,12 @@ export async function GET(request: NextRequest) {
     const data = await cjResponse.json();
 
     const produits = data.data?.list?.map((p: any, index: number) => {
-      const prixFournisseur = Math.round(p.sellPrice || 10);
-      const prixVente = Math.round(prixFournisseur * 2.5);
-      const marge = Math.round(((prixVente - prixFournisseur) / prixVente) * 100);
+      const prixFournisseur = p.sellPrice ? Math.round(p.sellPrice) : null;
+const prixVente = prixFournisseur ? Math.round(prixFournisseur * 2.5) : null;
+const marge = prixFournisseur ? Math.round(((prixVente! - prixFournisseur) / prixVente!) * 100) : null;
+      
       const scoreGoogle = trendsData.scoreGoogle || 50;
-      const scoreMarge = Math.min(40, Math.round((marge / 100) * 40));
+      const scoreMarge = marge ? Math.min(40, Math.round((marge / 100) * 40)) : 20;
       const scoreTendance = Math.min(30, Math.round((scoreGoogle / 100) * 30));
       const scoreConcurrence = Math.floor(Math.random() * 20) + 5;
       const winningScore = Math.min(100, scoreMarge + scoreTendance + scoreConcurrence);
@@ -88,8 +89,8 @@ export async function GET(request: NextRequest) {
         url: `https://www.cjdropshipping.com/product-detail.html?id=${p.pid}`,
       };
     });
-
-    return NextResponse.json({ produits: produits || [], trends: trendsData });
+const produitsValides = produits?.filter((p: any) => p.prix !== null);
+    return NextResponse.json({ produits: produitsValides || [], trends: trendsData });
   } catch (error) {
     return NextResponse.json({ produits: [], error: "Erreur CJ API" });
   }
