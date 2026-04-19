@@ -192,7 +192,13 @@ export default function Home() {
           {!loading && filteredProducts.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {filteredProducts.map((p) => (
-                <div key={p.id} onClick={() => router.push(`/produit/${p.id}`)}
+                <div key={p.id} onClick={() => {
+  if (p.url) {
+    window.open(p.url, '_blank');
+  } else {
+    router.push(`/produit/${p.id}`);
+  }
+}}
                   className="bg-gray-900 border border-gray-800 hover:border-orange-500/50 rounded-2xl p-6 cursor-pointer transition-all hover:-translate-y-1">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="text-lg font-semibold leading-tight">{p.nom}</h4>
