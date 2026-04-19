@@ -13,11 +13,25 @@ async function getCJToken() {
   return data.data?.accessToken;
 }
 
+const googleTrends = require("google-trends-api");
+
 async function getTrends(query: string) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/trends?query=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    return data;
+    const result = await googleTrends.interestOverTime({
+      keyword: query,
+      startTime: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      hl: "fr",
+      geo: "FR",
+    });
+    const data = JSON.parse(result);
+    const timelineData = data.default?.timelineData || [];
+    const values = timelineData.map((d: any) => d.value[0]);
+    const avg = values.length > 0 ? Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length) : 50;
+    const recent = values.slice(-4);
+    const recentAvg = recent.length > 0 ? Math.round(recent.reduce((a: number, b: number) => a + b, 0) / recent.length) : 50;
+    const tendance = Math.min(10, Math.round(recentAvg / 10));
+    const croissance = recentAvg > avg ? "hausse" : recentAvg < avg ? "baisse" : "stable";
+    return { tendance, croissance, scoreGoogle: recentAvg };
   } catch {
     return { tendance: 5, scoreGoogle: 50, croissance: "stable" };
   }
