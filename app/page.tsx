@@ -36,10 +36,8 @@ export default function Home() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data, error } = await supabase.from("produits").select("*");
-      if (!error && data) setAllProducts(data);
-      setLoading(false);
-    };
+  setLoading(false);
+};
     fetchProducts();
   }, []);
 
@@ -47,6 +45,18 @@ export default function Home() {
     setLoading(true);
     try {
       const res = await fetch(`/api/produits?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.produits && data.produits.length > 0) {
+        setAllProducts(data.produits);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };const searchByCategory = async (cat: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/produits?query=${encodeURIComponent(cat)}&categorie=${encodeURIComponent(cat)}`);
       const data = await res.json();
       if (data.produits && data.produits.length > 0) {
         setAllProducts(data.produits);
@@ -178,7 +188,12 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               {categories.map((cat) => (
-                <button key={cat} onClick={() => { setSelectedCategory(cat === selectedCategory ? null : cat); setSearch(""); }}
+              <button key={cat} onClick={() => {
+  const newCat = cat === selectedCategory ? null : cat;
+  setSelectedCategory(newCat);
+  setSearch("");
+  if (newCat) searchByCategory(newCat);
+}}
                   className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium transition-all border ${selectedCategory === cat ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
                   <span>{categoryEmojis[cat]}</span><span>{cat}</span>
                 </button>
