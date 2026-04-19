@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       score: Math.floor(Math.random() * 30) + 65,
       categorie: categorie || "Tous",
       image: p.product_photo,
-      url: p.product_url,
+      url: p.product_url ? `${p.product_url}${p.product_url.includes('?') ? '&' : '?'}tag=winnerscope-21` : undefined,
       rating: p.product_star_rating,
       avis: p.product_num_ratings,
     }));
