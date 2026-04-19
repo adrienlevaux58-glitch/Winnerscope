@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       score: Math.floor(Math.random() * 30) + 65,
       categorie: query,
       image: p.productImage,
-      url: `https://cjdropshipping.com/search?q=${encodeURIComponent(p.productNameEn)}`,
+      url: `https://www.cjdropshipping.com/list?searchKey=${encodeURIComponent(p.productNameEn)}`,
     }));
 
     return NextResponse.json({ produits: produits || [] });
