@@ -119,7 +119,7 @@ export default function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">qui cartonnent</span>
           </h1>
           <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-            WinnerScope analyse les meilleurs produits dropshipping et te donne un score de potentiel basé sur la marge, la concurrence et les tendances.
+            WinnerScope analyse les meilleurs produits pour le dropshipping, l'achat-revente et l'e-commerce. Compare les marges, la concurrence et les tendances pour trouver ton prochain produit gagnant.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             <button onClick={() => document.getElementById("produits")?.scrollIntoView({ behavior: "smooth" })} className="bg-orange-500 hover:bg-orange-600 px-8 py-4 rounded-xl text-lg font-semibold shadow-xl shadow-orange-500/20 w-full sm:w-auto">
