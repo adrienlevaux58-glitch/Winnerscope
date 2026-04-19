@@ -53,16 +53,20 @@ export default function Home() {
     return "text-red-400";
   };
 
-  const searchProducts = async (query: string) => {
-    setLoading(true);
-    try {
-      const endpoint = source === "amazon" ? `/api/produits?query=${encodeURIComponent(query)}` : `/api/cj?query=${encodeURIComponent(query)}`;
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  };
+  const searchProducts = async (query: string, currentSource?: string) => {
+  setLoading(true);
+  const src = currentSource || source;
+  try {
+    const endpoint = src === "amazon" 
+      ? `/api/produits?query=${encodeURIComponent(query)}` 
+      : `/api/cj?query=${encodeURIComponent(query)}`;
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
+    else setAllProducts([]);
+  } catch (e) { console.error(e); }
+  setLoading(false);
+};
 
   const searchByCategory = async (cat: string) => {
     setLoading(true);
@@ -182,17 +186,17 @@ export default function Home() {
             {/* ONGLETS */}
 <div className="flex justify-center gap-4 mb-8">
   <button
-    onClick={() => setSource("amazon")}
-    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "amazon" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
-  >
-    🛒 Amazon
-  </button>
-  <button
-    onClick={() => setSource("cj")}
-    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "cj" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
-  >
-    📦 CJDropshipping
-  </button>
+  onClick={() => { setSource("amazon"); if (search.length > 2) searchProducts(search, "amazon"); }}
+  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "amazon" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
+>
+  🛒 Amazon
+</button>
+<button
+  onClick={() => { setSource("cj"); if (search.length > 2) searchProducts(search, "cj"); }}
+  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "cj" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}
+>
+  📦 CJDropshipping
+</button>
 </div>
             <div className="relative max-w-2xl mx-auto mb-8">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
