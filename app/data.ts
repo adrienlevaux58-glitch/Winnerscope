@@ -1,0 +1,41 @@
+export const products = {
+  Mode: [
+    { id: 1, nom: "Veste oversize tendance", prix: 18, prixVente: 59, marge: 69, tendance: 9, recherches: 85000, concurrence: "Faible", fournisseur: "AliExpress", score: 87 },
+    { id: 2, nom: "Sac bandouliere minimaliste", prix: 8, prixVente: 34, marge: 76, tendance: 8, recherches: 62000, concurrence: "Moyen", fournisseur: "AliExpress", score: 78 },
+    { id: 3, nom: "Lunettes de soleil vintage", prix: 4, prixVente: 24, marge: 83, tendance: 7, recherches: 45000, concurrence: "Eleve", fournisseur: "CJDropshipping", score: 65 },
+    { id: 4, nom: "Casquette brodee personnalisee", prix: 6, prixVente: 28, marge: 79, tendance: 8, recherches: 52000, concurrence: "Faible", fournisseur: "AliExpress", score: 82 },
+    { id: 5, nom: "Chaussettes fantaisie pack x5", prix: 5, prixVente: 22, marge: 77, tendance: 7, recherches: 38000, concurrence: "Moyen", fournisseur: "CJDropshipping", score: 71 },
+    { id: 6, nom: "Ceinture tressee boheme", prix: 4, prixVente: 19, marge: 79, tendance: 6, recherches: 29000, concurrence: "Faible", fournisseur: "AliExpress", score: 68 },
+  ],
+  Electronique: [
+    { id: 7, nom: "Lampe LED RGB gaming", prix: 12, prixVente: 45, marge: 73, tendance: 9, recherches: 120000, concurrence: "Moyen", fournisseur: "AliExpress", score: 91 },
+    { id: 8, nom: "Support telephone voiture", prix: 5, prixVente: 22, marge: 77, tendance: 7, recherches: 95000, concurrence: "Eleve", fournisseur: "CJDropshipping", score: 72 },
+    { id: 9, nom: "Cable magnetique 3-en-1", prix: 3, prixVente: 19, marge: 84, tendance: 8, recherches: 78000, concurrence: "Moyen", fournisseur: "AliExpress", score: 80 },
+    { id: 10, nom: "Mini projecteur portable", prix: 35, prixVente: 99, marge: 65, tendance: 9, recherches: 110000, concurrence: "Faible", fournisseur: "AliExpress", score: 89 },
+    { id: 11, nom: "Ecouteurs sans fil TWS", prix: 14, prixVente: 49, marge: 71, tendance: 8, recherches: 145000, concurrence: "Eleve", fournisseur: "CJDropshipping", score: 76 },
+    { id: 12, nom: "Chargeur solaire portable", prix: 18, prixVente: 55, marge: 67, tendance: 7, recherches: 63000, concurrence: "Faible", fournisseur: "AliExpress", score: 74 },
+  ],
+  Beaute: [
+    { id: 13, nom: "Rouleau jade visage", prix: 6, prixVente: 29, marge: 79, tendance: 8, recherches: 55000, concurrence: "Faible", fournisseur: "AliExpress", score: 85 },
+    { id: 14, nom: "Brosse nettoyante sonique", prix: 9, prixVente: 39, marge: 77, tendance: 9, recherches: 88000, concurrence: "Moyen", fournisseur: "CJDropshipping", score: 83 },
+    { id: 15, nom: "Serum vitamine C", prix: 7, prixVente: 32, marge: 78, tendance: 7, recherches: 42000, concurrence: "Eleve", fournisseur: "AliExpress", score: 68 },
+    { id: 16, nom: "Masque LED anti-age", prix: 22, prixVente: 79, marge: 72, tendance: 9, recherches: 97000, concurrence: "Faible", fournisseur: "AliExpress", score: 90 },
+    { id: 17, nom: "Epilateur electrique portable", prix: 15, prixVente: 49, marge: 69, tendance: 8, recherches: 74000, concurrence: "Moyen", fournisseur: "CJDropshipping", score: 79 },
+    { id: 18, nom: "Palette contour visage", prix: 8, prixVente: 34, marge: 76, tendance: 7, recherches: 51000, concurrence: "Eleve", fournisseur: "AliExpress", score: 66 },
+  ],Maison: [
+    { id: 19, nom: "Organisateur de bureau", prix: 8, prixVente: 35, marge: 77, tendance: 8, recherches: 67000, concurrence: "Faible", fournisseur: "AliExpress", score: 84 },
+    { id: 20, nom: "Humidificateur silencieux", prix: 14, prixVente: 49, marge: 71, tendance: 9, recherches: 92000, concurrence: "Moyen", fournisseur: "CJDropshipping", score: 88 },
+    { id: 21, nom: "Lampe de chevet tactile", prix: 10, prixVente: 38, marge: 74, tendance: 7, recherches: 51000, concurrence: "Faible", fournisseur: "AliExpress", score: 79 },
+    { id: 22, nom: "Porte-savon en pierre", prix: 4, prixVente: 18, marge: 78, tendance: 7, recherches: 33000, concurrence: "Faible", fournisseur: "AliExpress", score: 75 },
+    { id: 23, nom: "Diffuseur huiles essentielles", prix: 12, prixVente: 42, marge: 71, tendance: 8, recherches: 81000, concurrence: "Moyen", fournisseur: "CJDropshipping", score: 82 },
+    { id: 24, nom: "Boite rangement modulable", prix: 9, prixVente: 32, marge: 72, tendance: 6, recherches: 44000, concurrence: "Faible", fournisseur: "AliExpress", score: 70 },
+  ],
+  Sport: [
+    { id: 25, nom: "Bande de resistance fitness", prix: 4, prixVente: 22, marge: 82, tendance: 9, recherches: 110000, concurrence: "Moyen", fournisseur: "AliExpress", score: 90 },
+    { id: 26, nom: "Tapis de yoga antiderapant", prix: 11, prixVente: 42, marge: 74, tendance: 8, recherches: 75000, concurrence: "Eleve", fournisseur: "CJDropshipping", score: 74 },
+    { id: 27, nom: "Gourde isotherme 1L", prix: 9, prixVente: 35, marge: 74, tendance: 7, recherches: 88000, concurrence: "Moyen", fournisseur: "AliExpress", score: 76 },
+    { id: 28, nom: "Corde a sauter lestee", prix: 6, prixVente: 25, marge: 76, tendance: 8, recherches: 59000, concurrence: "Faible", fournisseur: "AliExpress", score: 83 },
+    { id: 29, nom: "Rouleau de massage myofascial", prix: 8, prixVente: 32, marge: 75, tendance: 7, recherches: 47000, concurrence: "Faible", fournisseur: "CJDropshipping", score: 78 },
+    { id: 30, nom: "Montre connectee sport", prix: 22, prixVente: 69, marge: 68, tendance: 9, recherches: 132000, concurrence: "Eleve", fournisseur: "AliExpress", score: 80 },
+  ],
+};
