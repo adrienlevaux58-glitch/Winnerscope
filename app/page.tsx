@@ -80,7 +80,9 @@ export default function Home() {
     ? allProducts.filter((p) => p.nom.toLowerCase().includes(search.toLowerCase()))
     : allProducts;
 
-  const produitsAffiches = user ? filteredProducts : filteredProducts.slice(0, 3);
+  const produitsAffiches = !user 
+  ? filteredProducts.slice(0, 3) 
+  : filteredProducts.slice(0, 5);
 
   return (
     <main className="min-h-screen bg-gray-950 text-white">
@@ -255,14 +257,24 @@ export default function Home() {
           )}
 
           {!user && filteredProducts.length > 3 && (
-            <div className="text-center py-12 border-t border-gray-800 mt-8">
-              <p className="text-xl font-bold mb-2">🔒 {filteredProducts.length - 3} produits masqués</p>
-              <p className="text-gray-400 mb-6">Crée un compte gratuit pour voir tous les produits</p>
-              <button onClick={() => router.push("/auth")} className="bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-xl font-semibold">
-                S'inscrire gratuitement →
-              </button>
-            </div>
-          )}
+  <div className="text-center py-12 border-t border-gray-800 mt-8">
+    <p className="text-xl font-bold mb-2">🔒 {filteredProducts.length - 3} produits masqués</p>
+    <p className="text-gray-400 mb-6">Crée un compte gratuit pour voir 5 produits</p>
+    <button onClick={() => router.push("/auth")} className="bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-xl font-semibold">
+      S'inscrire gratuitement →
+    </button>
+  </div>
+)}
+
+{user && filteredProducts.length > 5 && (
+  <div className="text-center py-12 border-t border-gray-800 mt-8">
+    <p className="text-xl font-bold mb-2">🔒 {filteredProducts.length - 5} produits masqués</p>
+    <p className="text-gray-400 mb-6">Passe au plan Pro pour voir tous les produits</p>
+    <button className="bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-xl font-semibold">
+      Passer Pro — 29€/mois →
+    </button>
+  </div>
+)}
 
           {!loading && search.length > 1 && filteredProducts.length === 0 && (
             <div className="text-center text-gray-500 py-20">
