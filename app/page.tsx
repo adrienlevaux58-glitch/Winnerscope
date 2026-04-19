@@ -10,6 +10,8 @@ type Product = {
   prixVente: number;
   marge: number;
   tendance: number;
+  croissance?: string;
+  scoreGoogle?: number;
   recherches: number;
   concurrence: string;
   fournisseur: string;
@@ -250,6 +252,14 @@ export default function Home() {
                     <div className="flex justify-between"><span>Marge</span><span className="text-green-400 font-medium">{p.marge}%</span></div>
                     <div className="flex justify-between"><span>Recherches/mois</span><span className="text-white font-medium">{p.recherches.toLocaleString()}</span></div>
                     <div className="flex justify-between"><span>Concurrence</span><span className="text-white font-medium">{p.concurrence}</span></div>
+                    {p.scoreGoogle && (
+  <div className="flex justify-between">
+    <span>Tendance Google</span>
+    <span className={`font-medium ${p.scoreGoogle >= 70 ? "text-green-400" : p.scoreGoogle >= 40 ? "text-orange-400" : "text-red-400"}`}>
+      {p.scoreGoogle}/100 {p.croissance === "hausse" ? "📈" : p.croissance === "baisse" ? "📉" : "➡️"}
+    </span>
+  </div>
+)}
                   </div>
                   <div className="pt-4 border-t border-gray-800 flex justify-between items-center">
                     <span className="text-xs text-blue-400 font-medium">{p.fournisseur}</span>
