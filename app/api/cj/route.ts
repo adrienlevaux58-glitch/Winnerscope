@@ -72,8 +72,6 @@ export async function GET(request: NextRequest) {
 
     const data = await cjResponse.json();
 
-    console.log("Exemple produit CJ:", JSON.stringify(data.data?.list?.[0]));
-
     const produits = data.data?.list?.map((p: any, index: number) => {
       const prixFournisseur = parsePrix(p.sellPrice);
       const prixVente = prixFournisseur ? Math.round(prixFournisseur * 2.5) : null;
