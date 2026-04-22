@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+const googleTrends = require("google-trends-api");
 
 async function getCJToken() {
   const response = await fetch(
@@ -13,7 +14,16 @@ async function getCJToken() {
   return data.data?.accessToken;
 }
 
-const googleTrends = require("google-trends-api");
+const parsePrix = (prix: string | number | null) => {
+  if (!prix) return null;
+  const str = prix.toString();
+  if (str.includes("--")) {
+    const parts = str.split("--").map((s: string) => parseFloat(s.trim()));
+    return Math.round(parts[0]);
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? null : Math.round(num);
+};
 
 async function getTrends(query: string) {
   try {
@@ -21,18 +31,20 @@ async function getTrends(query: string) {
       keyword: query,
       startTime: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
       hl: "fr",
-      geo: "FR",
+      geo: "BE",
     });
     const data = JSON.parse(result);
     const timelineData = data.default?.timelineData || [];
+    if (timelineData.length === 0) return { tendance: 5, scoreGoogle: 50, croissance: "stable" };
     const values = timelineData.map((d: any) => d.value[0]);
-    const avg = values.length > 0 ? Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length) : 50;
+    const avg = Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length);
     const recent = values.slice(-4);
-    const recentAvg = recent.length > 0 ? Math.round(recent.reduce((a: number, b: number) => a + b, 0) / recent.length) : 50;
-    const tendance = Math.min(10, Math.round(recentAvg / 10));
-    const croissance = recentAvg > avg ? "hausse" : recentAvg < avg ? "baisse" : "stable";
+    const recentAvg = Math.round(recent.reduce((a: number, b: number) => a + b, 0) / recent.length);
+    const tendance = Math.min(10, Math.max(1, Math.round(recentAvg / 10)));
+    const croissance = recentAvg > avg * 1.1 ? "hausse" : recentAvg < avg * 0.9 ? "baisse" : "stable";
     return { tendance, croissance, scoreGoogle: recentAvg };
-  } catch {
+  } catch (e) {
+    console.error("Google Trends error:", e);
     return { tendance: 5, scoreGoogle: 50, croissance: "stable" };
   }
 }
@@ -59,12 +71,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     const data = await cjResponse.json();
-console.log("Exemple produit CJ:", JSON.stringify(data.data?.list?.[0]));
+
+    console.log("Exemple produit CJ:", JSON.stringify(data.data?.list?.[0]));
+
     const produits = data.data?.list?.map((p: any, index: number) => {
-      const prixFournisseur = p.sellPrice ? Math.round(p.sellPrice) : null;
-const prixVente = prixFournisseur ? Math.round(prixFournisseur * 2.5) : null;
-const marge = prixFournisseur ? Math.round(((prixVente! - prixFournisseur) / prixVente!) * 100) : null;
-      
+      const prixFournisseur = parsePrix(p.sellPrice);
+      const prixVente = prixFournisseur ? Math.round(prixFournisseur * 2.5) : null;
+      const marge = prixFournisseur && prixVente ? Math.round(((prixVente - prixFournisseur) / prixVente) * 100) : null;
       const scoreGoogle = trendsData.scoreGoogle || 50;
       const scoreMarge = marge ? Math.min(40, Math.round((marge / 100) * 40)) : 20;
       const scoreTendance = Math.min(30, Math.round((scoreGoogle / 100) * 30));
@@ -89,7 +102,9 @@ const marge = prixFournisseur ? Math.round(((prixVente! - prixFournisseur) / pri
         url: `https://www.cjdropshipping.com/product-detail.html?id=${p.pid}`,
       };
     });
-const produitsValides = produits?.filter((p: any) => p.prix !== null && p.prix !== undefined && p.prix > 0);
+
+    const produitsValides = produits?.filter((p: any) => p.prix !== null && p.prix !== undefined && p.prix > 0);
+
     return NextResponse.json({ produits: produitsValides || [], trends: trendsData });
   } catch (error) {
     return NextResponse.json({ produits: [], error: "Erreur CJ API" });
