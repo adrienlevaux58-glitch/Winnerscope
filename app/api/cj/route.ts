@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     const data = await cjResponse.json();
-
+console.log("Exemple produit CJ:", JSON.stringify(data.data?.list?.[0]));
     const produits = data.data?.list?.map((p: any, index: number) => {
       const prixFournisseur = p.sellPrice ? Math.round(p.sellPrice) : null;
 const prixVente = prixFournisseur ? Math.round(prixFournisseur * 2.5) : null;
@@ -89,7 +89,7 @@ const marge = prixFournisseur ? Math.round(((prixVente! - prixFournisseur) / pri
         url: `https://www.cjdropshipping.com/product-detail.html?id=${p.pid}`,
       };
     });
-const produitsValides = produits?.filter((p: any) => p.prix !== null);
+const produitsValides = produits?.filter((p: any) => p.prix !== null && p.prix !== undefined && p.prix > 0);
     return NextResponse.json({ produits: produitsValides || [], trends: trendsData });
   } catch (error) {
     return NextResponse.json({ produits: [], error: "Erreur CJ API" });
