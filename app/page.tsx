@@ -1,4 +1,3 @@
-"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
@@ -24,7 +23,48 @@ type Product = {
   categorie: string;
   url?: string;
   image?: string;
+  resellingScore?: number | null;
+  ebayMedianPrice?: number | null;
 };
+
+function calcResellingScore(
+  ebayMedianPrice: number | null,
+  totalResults: number,
+  sellerCount: number,
+  cjPrice: number | null,
+  trendsScore: number
+): number | null {
+  if (!ebayMedianPrice) return null;
+  const margeScore = cjPrice
+    ? Math.min(100, Math.max(0, ((ebayMedianPrice - cjPrice) / ebayMedianPrice) * 200))
+    : 50;
+  const demandeScore = Math.min(100, totalResults / 100);
+  const concurrenceScore = Math.max(0, 100 - sellerCount * 4);
+  return Math.round(
+    margeScore * 0.30 +
+    demandeScore * 0.25 +
+    concurrenceScore * 0.25 +
+    trendsScore * 0.20
+  );
+}
+
+async function fetchEbayScore(produit: Product): Promise<Partial<Product>> {
+  try {
+    const res = await fetch(`/api/ebay?q=${encodeURIComponent(produit.nom)}`);
+    const ebay = await res.json();
+    if (ebay.error || ebay.reason === "no_results") return { resellingScore: null };
+    const resellingScore = calcResellingScore(
+      ebay.medianPrice,
+      ebay.totalResults,
+      ebay.sellerCount,
+      produit.prix,
+      produit.scoreGoogle ?? 50
+    );
+    return { resellingScore, ebayMedianPrice: ebay.medianPrice };
+  } catch {
+    return { resellingScore: null };
+  }
+}
 
 export default function Home() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -60,10 +100,22 @@ export default function Home() {
     setUser(null);
   };
 
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number | null | undefined) => {
+    if (score == null) return "text-gray-500";
     if (score >= 70) return "text-green-400";
     if (score >= 40) return "text-orange-400";
     return "text-red-400";
+  };
+
+  const enrichWithEbay = async (produits: Product[]) => {
+    const withPending = produits.map((p) => ({ ...p, resellingScore: undefined }));
+    setAllProducts(withPending);
+    produits.forEach(async (p, idx) => {
+      const ebayData = await fetchEbayScore(p);
+      setAllProducts((prev) =>
+        prev.map((item, i) => (i === idx ? { ...item, ...ebayData } : item))
+      );
+    });
   };
 
   const searchProducts = async (query: string, currentSource?: string) => {
@@ -75,8 +127,11 @@ export default function Home() {
         : `/api/cj?query=${encodeURIComponent(query)}`;
       const res = await fetch(endpoint);
       const data = await res.json();
-      if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
-      else setAllProducts([]);
+      if (data.produits && data.produits.length > 0) {
+        await enrichWithEbay(data.produits);
+      } else {
+        setAllProducts([]);
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -90,8 +145,11 @@ export default function Home() {
         : `/api/cj?query=${encodeURIComponent(cat)}`;
       const res = await fetch(endpoint);
       const data = await res.json();
-      if (data.produits && data.produits.length > 0) setAllProducts(data.produits);
-      else setAllProducts([]);
+      if (data.produits && data.produits.length > 0) {
+        await enrichWithEbay(data.produits);
+      } else {
+        setAllProducts([]);
+      }
     } catch (e) { console.error(e); }
     setLoading(false);
   };
@@ -119,7 +177,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              <span className="text-sm text.gray-400 hidden md:block">{user.email}</span>
+              <span className="text-sm text-gray-400 hidden md:block">{user.email}</span>
               <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-white transition-colors">Déconnexion</button>
               <button className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold">Passer Pro</button>
             </>
@@ -157,7 +215,7 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
             {[
               { value: "1M+", label: "Produits disponibles" },
-              { value: "2", label: "Sources de données" },
+              { value: "3", label: "Sources de données" },
               { value: "100%", label: "Basé sur Google Trends" },
             ].map((s) => (
               <div key={s.label} className="text-center">
@@ -177,12 +235,12 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: "🎯", title: "Winning Score", desc: "Score de 0 à 100 basé sur Google Trends, la marge réelle et la concurrence." },
-              { icon: "📊", title: "Google Trends", desc: "Tendances de recherche réelles pour chaque produit." },
+              { icon: "🎯", title: "Drop Score", desc: "Score dropshipping basé sur marge CJ, Google Trends et concurrence fournisseurs." },
+              { icon: "📦", title: "Resell Score", desc: "Score achat-revente basé sur les prix eBay réels, la demande et la concurrence marché." },
               { icon: "🏭", title: "CJDropshipping", desc: "Accès direct aux produits avec prix fournisseur réel." },
               { icon: "🔍", title: "Recherche rapide", desc: "Trouve n'importe quel produit en quelques secondes." },
               { icon: "📈", title: "Tendances réelles", desc: "Données Google Trends en temps réel pour BE et FR." },
-              { icon: "💡", title: "Analyse complète", desc: "Marge, concurrence, tendance et score global." },
+              { icon: "💡", title: "Analyse complète", desc: "Marge, concurrence, tendance et double score global." },
             ].map((f) => (
               <div key={f.title} className="bg-white/5 border border-white/5 hover:border-orange-500/20 rounded-2xl p-6 transition-all">
                 <span className="text-3xl mb-4 block">{f.icon}</span>
@@ -241,6 +299,12 @@ export default function Home() {
                     <div className="flex justify-between"><span>Prix de vente estimé</span><span className="text-white font-medium">{p.prixVente ? `${p.prixVente}€` : "N/A"}</span></div>
                     <div className="flex justify-between"><span>Marge</span><span className="text-green-400 font-medium">{p.marge ? `${p.marge}%` : "N/A"}</span></div>
                     <div className="flex justify-between"><span>Concurrence</span><span className="text-white font-medium">{p.concurrence}</span></div>
+                    {p.ebayMedianPrice && (
+                      <div className="flex justify-between">
+                        <span>Prix médian eBay</span>
+                        <span className="text-blue-400 font-medium">{p.ebayMedianPrice}€</span>
+                      </div>
+                    )}
                     {p.scoreGoogle !== undefined && (
                       <div className="flex justify-between">
                         <span>Tendance Google</span>
@@ -251,15 +315,28 @@ export default function Home() {
                     )}
                   </div>
                   <div className="pt-4 border-t border-gray-800">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-blue-400 font-medium">{p.fournisseur}</span>
-                      <span className="text-xs text-gray-500">Voir produit →</span>
+                    <span className="text-xs text-blue-400 font-medium block mb-3">{p.fournisseur}</span>
+                    <div className="flex gap-3">
+                      <div className="flex-1 bg-gray-800 rounded-xl px-3 py-2 text-center">
+                        <p className="text-xs text-gray-500 mb-1">🎯 Drop Score</p>
+                        <p className={`text-xl font-bold ${getScoreColor(p.score)}`}>
+                          {p.score}<span className="text-xs font-normal text-gray-500">/100</span>
+                        </p>
+                      </div>
+                      <div className="flex-1 bg-gray-800 rounded-xl px-3 py-2 text-center">
+                        <p className="text-xs text-gray-500 mb-1">📦 Resell Score</p>
+                        {p.resellingScore === undefined ? (
+                          <p className="text-sm text-gray-600 animate-pulse mt-1">…</p>
+                        ) : p.resellingScore === null ? (
+                          <p className="text-sm text-gray-600 mt-1">—</p>
+                        ) : (
+                          <p className={`text-xl font-bold ${getScoreColor(p.resellingScore)}`}>
+                            {p.resellingScore}<span className="text-xs font-normal text-gray-500">/100</span>
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Winning Score</span>
-                      <span className={`text-2xl font-bold ${getScoreColor(p.score)}`}>{p.score}/100</span>
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1 text-right">Basé sur Google Trends 📊 + Marge + Concurrence</p>
+                    <p className="text-xs text-gray-600 mt-2 text-right">Drop: CJ + Trends · Resell: eBay réel 📊</p>
                   </div>
                 </div>
               ))}
@@ -302,7 +379,7 @@ export default function Home() {
               <ul className="space-y-3 text-gray-400 text-sm mb-8">
                 <li>✅ 3 produits par recherche</li>
                 <li>✅ Recherche par mot-clé</li>
-                <li>✅ Winning Score basique</li>
+                <li>✅ Drop Score + Resell Score</li>
                 <li>❌ Produits illimités</li>
                 <li>❌ Google Trends détaillé</li>
                 <li>❌ Prix fournisseur complet</li>
@@ -317,8 +394,8 @@ export default function Home() {
                 <li>✅ Produits illimités</li>
                 <li>✅ Google Trends en temps réel</li>
                 <li>✅ Prix fournisseur complet</li>
-                <li>✅ Winning Score avancé</li>
-                <li>✅ CJDropshipping + Amazon</li>
+                <li>✅ Drop Score + Resell Score avancés</li>
+                <li>✅ CJDropshipping + Amazon + eBay</li>
                 <li>✅ Alertes nouveaux produits</li>
               </ul>
               <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 rounded-xl transition-colors font-semibold">Commencer l'essai gratuit</button>
@@ -329,9 +406,8 @@ export default function Home() {
 
       <footer className="border-t border-white/5 px-8 py-8 text-center text-gray-500 text-sm">
         <p>© 2025 WinnerScope — Dropshipping · Achat-Revente · E-commerce</p>
-        <p className="mt-2 text-xs">Winning Score basé sur Google Trends + Marge réelle + Analyse concurrence</p>
+        <p className="mt-2 text-xs">Drop Score: CJ + Google Trends · Resell Score: eBay réel + Tendances 📊</p>
       </footer>
-
     </main>
   );
 }
