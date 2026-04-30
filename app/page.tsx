@@ -27,6 +27,18 @@ type Product = {
   ebayMedianPrice?: number | null;
 };
 
+// Extrait 3-5 mots-clés utiles depuis le nom produit
+function extractKeywords(nom: string): string {
+  const stopwords = ["with","and","for","the","de","du","la","le","les","une","un","des","et","en","à","au","sur","par","pro","new","set","kit","pcs","lot","pack","piece","cm","mm","ml","g","kg","xl","xxl","type","style","model","high","quality","free","shipping","hot","best","sale"];
+  return nom
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !stopwords.includes(w))
+    .slice(0, 4)
+    .join(" ");
+}
+
 function calcResellingScore(
   ebayMedianPrice: number | null,
   totalResults: number,
@@ -50,7 +62,9 @@ function calcResellingScore(
 
 async function fetchEbayScore(produit: Product): Promise<Partial<Product>> {
   try {
-    const res = await fetch(`/api/ebay?q=${encodeURIComponent(produit.nom)}`);
+    const keywords = extractKeywords(produit.nom);
+    if (!keywords) return { resellingScore: null };
+    const res = await fetch(`/api/ebay?q=${encodeURIComponent(keywords)}`);
     const ebay = await res.json();
     if (ebay.error || ebay.reason === "no_results") return { resellingScore: null };
     const resellingScore = calcResellingScore(
@@ -71,7 +85,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [source, setSource] = useState("cj");
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
@@ -90,10 +103,10 @@ export default function Home() {
   useEffect(() => {
     if (search.length <= 2) return;
     const timer = setTimeout(() => {
-      searchProducts(search, source);
+      searchProducts(search);
     }, 800);
     return () => clearTimeout(timer);
-  }, [search, source]);
+  }, [search]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -107,7 +120,7 @@ export default function Home() {
     return "text-red-400";
   };
 
-  const enrichWithEbay = async (produits: Product[]) => {
+  const enrichWithEbay = (produits: Product[]) => {
     const withPending = produits.map((p) => ({ ...p, resellingScore: undefined }));
     setAllProducts(withPending);
     produits.forEach(async (p, idx) => {
@@ -118,17 +131,13 @@ export default function Home() {
     });
   };
 
-  const searchProducts = async (query: string, currentSource?: string) => {
+  const searchProducts = async (query: string) => {
     setLoading(true);
-    const src = currentSource || source;
     try {
-      const endpoint = src === "amazon"
-        ? `/api/produits?query=${encodeURIComponent(query)}`
-        : `/api/cj?query=${encodeURIComponent(query)}`;
-      const res = await fetch(endpoint);
+      const res = await fetch(`/api/cj?query=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (data.produits && data.produits.length > 0) {
-        await enrichWithEbay(data.produits);
+        enrichWithEbay(data.produits);
       } else {
         setAllProducts([]);
       }
@@ -136,17 +145,13 @@ export default function Home() {
     setLoading(false);
   };
 
-  const searchByCategory = async (cat: string, currentSource?: string) => {
+  const searchByCategory = async (cat: string) => {
     setLoading(true);
-    const src = currentSource || source;
     try {
-      const endpoint = src === "amazon"
-        ? `/api/produits?query=${encodeURIComponent(cat)}`
-        : `/api/cj?query=${encodeURIComponent(cat)}`;
-      const res = await fetch(endpoint);
+      const res = await fetch(`/api/cj?query=${encodeURIComponent(cat)}`);
       const data = await res.json();
       if (data.produits && data.produits.length > 0) {
-        await enrichWithEbay(data.produits);
+        enrichWithEbay(data.produits);
       } else {
         setAllProducts([]);
       }
@@ -256,15 +261,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Explorer les produits</h2>
-            <p className="text-gray-400 text-lg mb-6">Sélectionne une source et recherche un produit</p>
-            <div className="flex justify-center gap-4 mb-6">
-              <button onClick={() => { setSource("amazon"); if (search.length > 2) searchProducts(search, "amazon"); }} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "amazon" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
-                🛒 Amazon
-              </button>
-              <button onClick={() => { setSource("cj"); if (search.length > 2) searchProducts(search, "cj"); }} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all border ${source === "cj" ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
-                📦 CJDropshipping
-              </button>
-            </div>
+            <p className="text-gray-400 text-lg mb-8">Recherche un produit ou sélectionne une catégorie</p>
             <div className="relative max-w-2xl mx-auto mb-8">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setSelectedCategory(null); }} placeholder="Rechercher n'importe quel produit..." className="w-full bg-gray-900 border border-gray-700 focus:border-orange-500 rounded-2xl pl-12 pr-6 py-4 text-white placeholder-gray-500 focus:outline-none text-lg" />
@@ -272,7 +269,7 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               {categories.map((cat) => (
-                <button key={cat} onClick={() => { const newCat = cat === selectedCategory ? null : cat; setSelectedCategory(newCat); setSearch(""); if (newCat) searchByCategory(newCat, source); }} className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium transition-all border ${selectedCategory === cat ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
+                <button key={cat} onClick={() => { const newCat = cat === selectedCategory ? null : cat; setSelectedCategory(newCat); setSearch(""); if (newCat) searchByCategory(newCat); }} className={`flex items-center gap-2 rounded-2xl px-6 py-3 font-medium transition-all border ${selectedCategory === cat ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-900 border-gray-800 hover:border-orange-500/50"}`}>
                   <span>{categoryEmojis[cat]}</span><span>{cat}</span>
                 </button>
               ))}
@@ -395,7 +392,7 @@ export default function Home() {
                 <li>✅ Google Trends en temps réel</li>
                 <li>✅ Prix fournisseur complet</li>
                 <li>✅ Drop Score + Resell Score avancés</li>
-                <li>✅ CJDropshipping + Amazon + eBay</li>
+                <li>✅ CJDropshipping + eBay</li>
                 <li>✅ Alertes nouveaux produits</li>
               </ul>
               <button className="w-full bg-orange-500 hover:bg-orange-600 py-3 rounded-xl transition-colors font-semibold">Commencer l'essai gratuit</button>
